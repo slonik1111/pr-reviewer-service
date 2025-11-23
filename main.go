@@ -1,17 +1,36 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
+
+	_ "github.com/lib/pq"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/http/handlers"
-	"github.com/slonik1111/pr-reviewer-service/internal/repository/inmemory"
+	"github.com/slonik1111/pr-reviewer-service/internal/repository/postgres"
 	"github.com/slonik1111/pr-reviewer-service/internal/service"
 )
 
 func main() {
-	userRepo := inmemory.NewUserRepoInMemory()
-	prRepo := inmemory.NewPRRepoInMemory()
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		log.Fatal("DATABASE_URL not set")
+	}
+
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("failed to connect to DB: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("failed to ping DB: %v", err)
+	}
+
+	userRepo := postgres.NewUserRepo(db)
+	prRepo := postgres.NewPullRequestRepo(db)
 
 	userSvc := service.NewUserService(userRepo, prRepo)
 	teamSvc := service.NewTeamService(userRepo)

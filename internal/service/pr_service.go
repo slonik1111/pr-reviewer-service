@@ -16,13 +16,11 @@ var (
 	ErrNoCandidate         = errors.New("no active replacement candidate in team")
 )
 
-// PRService управляет Pull Request и назначением ревьюверов
 type PRService struct {
 	prRepo   repo.PullRequestRepository
 	userRepo repo.UserRepository
 }
 
-// NewPRService создает сервис PR
 func NewPRService(prRepo repo.PullRequestRepository, userRepo repo.UserRepository) *PRService {
 	return &PRService{
 		prRepo:   prRepo,
@@ -30,7 +28,6 @@ func NewPRService(prRepo repo.PullRequestRepository, userRepo repo.UserRepositor
 	}
 }
 
-// CreatePR создает новый Pull Request и назначает до 2 ревьюверов
 func (s *PRService) CreatePR(pr domain.PullRequest) (domain.PullRequest, error) {
 	_, err := s.prRepo.Get(pr.ID)
 	if err == nil {
@@ -82,7 +79,6 @@ func (s *PRService) MergePR(prID string) (domain.PullRequest, error) {
 	return pr, nil
 }
 
-// ReassignReviewer заменяет одного ревьювера на другого из команды
 func (s *PRService) ReassignReviewer(prID string, oldReviewerID string) (domain.PullRequest, string, error) {
 	pr, err := s.prRepo.Get(prID)
 	if err != nil {

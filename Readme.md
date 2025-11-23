@@ -1,2 +1,2 @@
 Запуск:
-go run .
+docker-compose up

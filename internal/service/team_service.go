@@ -13,21 +13,17 @@ var (
 	ErrTeamNotFound = errors.New("team not found")
 )
 
-// TeamService управляет командами и их участниками
 type TeamService struct {
 	userRepo repo.UserRepository
 }
 
-// NewTeamService создает сервис команд
 func NewTeamService(userRepo repo.UserRepository) *TeamService {
 	return &TeamService{
 		userRepo: userRepo,
 	}
 }
 
-// CreateTeam создает команду и добавляет участников
 func (s *TeamService) CreateTeam(team string, members []domain.User) error {
-	// проверяем уникальность команды
 	_, err := s.userRepo.ListTeamUsers(team)
 	if err == nil {
 		return fmt.Errorf("team %s already exists", team)
@@ -42,7 +38,6 @@ func (s *TeamService) CreateTeam(team string, members []domain.User) error {
 	return nil
 }
 
-// GetTeam возвращает команду по имени
 func (s *TeamService) GetTeam(teamName string) ([]domain.User, error) {
 	team, err := s.userRepo.ListTeamUsers(teamName)
 	if err != nil {
@@ -51,7 +46,6 @@ func (s *TeamService) GetTeam(teamName string) ([]domain.User, error) {
 	return team, nil
 }
 
-// ListActiveMembers возвращает список активных пользователей команды
 func (s *TeamService) ListActiveMembers(teamID string) ([]domain.User, error) {
 	users, err := s.userRepo.ListActiveTeamUsers(teamID)
 	if err != nil {
@@ -60,7 +54,6 @@ func (s *TeamService) ListActiveMembers(teamID string) ([]domain.User, error) {
 	return users, nil
 }
 
-// GetRandomActiveMembers возвращает до N случайных активных пользователей
 func (s *TeamService) GetRandomActiveMembers(teamID string, excludeIDs []string, n int) ([]domain.User, error) {
 	users, err := s.ListActiveMembers(teamID)
 	if err != nil {
