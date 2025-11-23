@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
 	"github.com/slonik1111/pr-reviewer-service/internal/service"
@@ -29,18 +30,30 @@ func (h *PRHandler) CreatePR(w http.ResponseWriter, r *http.Request) {
 	}
 
 	
-	pr := &domain.PullRequest{
+	pr := domain.PullRequest{
 		ID:   req.PullRequestID,
 		Title: req.PullRequestName,
 		AuthorID: req.AuthorID,
 	}
 
-	if err := h.prService.CreatePR(pr); err != nil {
+	pr, err := h.prService.CreatePR(pr)
+
+	if  err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{"pr": pr})
+
+	ret := retPR{
+		ID: pr.ID,
+		Description: pr.Description,	
+		AuthorID: pr.AuthorID,
+		Status: string(pr.Status),
+		Reviewers: pr.Reviewers,
+		MergedAt: nil,
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{"pr": ret})
 }
 
 func (h *PRHandler) MergePR(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +70,19 @@ func (h *PRHandler) MergePR(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"pr": pr})
+
+	merged := time.Now().UTC().Format(time.RFC3339)
+
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"pr": retPR{
+			ID: pr.ID,
+			Description: pr.Description,
+			AuthorID: pr.AuthorID,
+			Status: string(pr.Status),
+			Reviewers: pr.Reviewers,
+			MergedAt: &merged,
+		},
+	})
 }
 
 func (h *PRHandler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
@@ -76,8 +101,17 @@ func (h *PRHandler) ReassignReviewer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ret := retPR{
+		ID: pr.ID,
+		Description: pr.Description,	
+		AuthorID: pr.AuthorID,
+		Status: string(pr.Status),
+		Reviewers: pr.Reviewers,
+		MergedAt: nil,
+	}
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"pr":          pr,
+		"pr":          ret,
 		"replaced_by": newReviewerID,
 	})
 }

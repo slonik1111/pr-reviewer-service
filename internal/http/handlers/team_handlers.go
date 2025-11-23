@@ -12,14 +12,19 @@ type TeamHandler struct {
 	teamService *service.TeamService
 }
 
+func NewTeamHandler(teamSvc *service.TeamService) *TeamHandler {
+	return &TeamHandler{teamService: teamSvc}
+}
+
 type reqUser struct {
 	ID       string `json:"user_id"`
 	Name     string `json:"username"`
 	IsActive bool   `json:"is_active"`
 }
 
-func NewTeamHandler(teamSvc *service.TeamService) *TeamHandler {
-	return &TeamHandler{teamService: teamSvc}
+type reqTeam struct {
+	Name 	string  `json:"team_name"`
+	Users 	[]reqUser	`json:"members"`
 }
 
 func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
@@ -32,13 +37,13 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	team := &domain.Team{Name: req.TeamName}
-	members := make([]*domain.User, len(req.Members))
+	team := req.TeamName
+	members := make([]domain.User, len(req.Members))
 	for i := range req.Members {
-		members[i] = &domain.User{
+		members[i] = domain.User{
 			ID:       req.Members[i].ID,
-			Name:     req.TeamName,
-			TeamID:   req.Members[i].Name,
+			Name:     req.Members[i].Name,
+			TeamName: req.TeamName,
 			IsActive: req.Members[i].IsActive}
 	}
 
@@ -47,7 +52,9 @@ func (h *TeamHandler) CreateTeam(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{"team": team})
+	retTeam := reqTeam{Name: team, Users: req.Members}
+
+	json.NewEncoder(w).Encode(retTeam)
 }
 
 func (h *TeamHandler) GetTeam(w http.ResponseWriter, r *http.Request) {
@@ -61,5 +68,16 @@ func (h *TeamHandler) GetTeam(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	json.NewEncoder(w).Encode(team)
+	retTeam := reqTeam{
+		Name: teamName,
+		Users: make([]reqUser, len(team)),
+	}
+	for i := range team {
+		retTeam.Users[i] = reqUser {
+			ID: team[i].ID,
+			Name: team[i].Name,
+			IsActive: team[i].IsActive,
+		}
+	}
+	json.NewEncoder(w).Encode(retTeam)
 }

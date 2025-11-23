@@ -13,8 +13,7 @@ type PullRequest struct {
 	Description   string
 	AuthorID      string
 	TeamID        string
-	Reviewer1     *string
-	Reviewer2     *string
+	Reviewers     []string
 	Status        PRStatus
 	CreatedAt     int64
 	MergedAt      *int64

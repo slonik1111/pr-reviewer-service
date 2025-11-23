@@ -11,12 +11,11 @@ import (
 
 func main() {
 	userRepo := inmemory.NewUserRepoInMemory()
-	teamRepo := inmemory.NewTeamRepoInMemory()
 	prRepo := inmemory.NewPRRepoInMemory()
 
 	userSvc := service.NewUserService(userRepo, prRepo)
-	teamSvc := service.NewTeamService(teamRepo, userRepo)
-	prSvc := service.NewPRService(prRepo, userRepo, teamRepo)
+	teamSvc := service.NewTeamService(userRepo)
+	prSvc := service.NewPRService(prRepo, userRepo)
 
 	userHandler := handlers.NewUserHandler(userSvc)
 	teamHandler := handlers.NewTeamHandler(teamSvc)

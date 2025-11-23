@@ -2,26 +2,27 @@ package inmemory
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
-	"github.com/slonik1111/pr-reviewer-service/internal/repository"
+	repo "github.com/slonik1111/pr-reviewer-service/internal/repository"
 )
 
-var _ repo.UserRepository = (*UserRepoInMemory)(nil)
+var _ repo.UserRepository = nil
 
 type UserRepoInMemory struct {
 	mu    sync.RWMutex
-	users map[string]*domain.User
+	users map[string]domain.User
 }
 
 func NewUserRepoInMemory() *UserRepoInMemory {
 	return &UserRepoInMemory{
-		users: make(map[string]*domain.User),
+		users: make(map[string]domain.User),
 	}
 }
 
-func (r *UserRepoInMemory) Create(user *domain.User) error {
+func (r *UserRepoInMemory) Create(user domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -32,18 +33,18 @@ func (r *UserRepoInMemory) Create(user *domain.User) error {
 	return nil
 }
 
-func (r *UserRepoInMemory) GetUser(id string) (*domain.User, error) {
+func (r *UserRepoInMemory) GetUser(id string) (domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	u, ok := r.users[id]
 	if !ok {
-		return nil, errors.New("user not found")
+		return domain.User{}, errors.New("user not found")
 	}
 	return u, nil
 }
 
-func (r *UserRepoInMemory) Update(user *domain.User) error {
+func (r *UserRepoInMemory) Update(user domain.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -54,26 +55,29 @@ func (r *UserRepoInMemory) Update(user *domain.User) error {
 	return nil
 }
 
-func (r *UserRepoInMemory) ListTeamUsers(teamID string) ([]*domain.User, error) {
+func (r *UserRepoInMemory) ListTeamUsers(teamName string) ([]domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	res := []*domain.User{}
+	res := []domain.User{}
 	for _, u := range r.users {
-		if u.TeamID == teamID {
+		if u.TeamName == teamName {
 			res = append(res, u)
 		}
+	}
+	if len(res) == 0 {
+		return nil, fmt.Errorf("team alredy exists: %s", teamName)
 	}
 	return res, nil
 }
 
-func (r *UserRepoInMemory) ListActiveTeamUsers(teamID string) ([]*domain.User, error) {
+func (r *UserRepoInMemory) ListActiveTeamUsers(teamID string) ([]domain.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	res := []*domain.User{}
+	res := []domain.User{}
 	for _, u := range r.users {
-		if u.TeamID == teamID && u.IsActive {
+		if u.TeamName == teamID && u.IsActive {
 			res = append(res, u)
 		}
 	}

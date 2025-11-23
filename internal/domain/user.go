@@ -3,6 +3,6 @@ package domain
 type User struct {
 	ID       string
 	Name     string
-	TeamID   string
+	TeamName string
 	IsActive bool
 }

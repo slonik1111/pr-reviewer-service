@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
+	// "log"
 	"net/http"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/service"
@@ -18,8 +18,8 @@ func NewUserHandler(userSvc *service.UserService) *UserHandler {
 
 func (h *UserHandler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		UserID  string `json:"user_id"`
-		IsActive bool  `json:"is_active"`
+		UserID   string `json:"user_id"`
+		IsActive bool   `json:"is_active"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -30,12 +30,20 @@ func (h *UserHandler) SetIsActive(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	json.NewEncoder(w).Encode(map[string]interface{}{"user": user})
+	req.IsActive = user.IsActive
+	json.NewEncoder(w).Encode(req)
+}
+
+type retPR struct {
+	ID          string `json:"pull_request_id"`
+	Description string `json:"pull_request_name"`
+	AuthorID    string `json:"author_id"`
+	Status      string `json:"status"`
+	Reviewers	[]string `json:"revievers"`
+	MergedAt    *string  `json:"mergedAt,omitempty"`
 }
 
 func (h *UserHandler) GetPRsForUser(w http.ResponseWriter, r *http.Request) {
-	log.Println(h.userService.GetUser("u1"))
-	log.Println(h.userService.GetUser("u2"))
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user_id required", http.StatusBadRequest)
@@ -46,8 +54,19 @@ func (h *UserHandler) GetPRsForUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
+	retPrs := make([]retPR, len(prs))
+	for i := range prs {
+		retPrs[i] = retPR{
+			ID: prs[i].ID,
+			Description: prs[i].Description,
+			AuthorID: prs[i].AuthorID,
+			Status: string(prs[i].Status),
+			Reviewers: prs[i].Reviewers,
+			MergedAt: nil,
+		}
+	}
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"user_id":       userID,
-		"pull_requests": prs,
+		"pull_requests": retPrs,
 	})
 }

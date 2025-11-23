@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
-	"github.com/slonik1111/pr-reviewer-service/internal/repository"
+	repo "github.com/slonik1111/pr-reviewer-service/internal/repository"
 )
 
 var (
@@ -27,31 +27,31 @@ func NewUserService(userRepo repo.UserRepository, prRepo repo.PullRequestReposit
 }
 
 // GetUser возвращает пользователя по ID
-func (s *UserService) GetUser(userID string) (*domain.User, error) {
+func (s *UserService) GetUser(userID string) (domain.User, error) {
 	user, err := s.userRepo.GetUser(userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return domain.User{}, ErrUserNotFound
 	}
 	return user, nil
 }
 
 // SetIsActive устанавливает флаг активности пользователя
-func (s *UserService) SetIsActive(userID string, isActive bool) (*domain.User, error) {
+func (s *UserService) SetIsActive(userID string, isActive bool) (domain.User, error) {
 	user, err := s.userRepo.GetUser(userID)
 	if err != nil {
-		return nil, ErrUserNotFound
+		return domain.User{}, ErrUserNotFound
 	}
 
 	user.IsActive = isActive
 	if err := s.userRepo.Update(user); err != nil {
-		return nil, fmt.Errorf("failed to update user: %w", err)
+		return domain.User{}, fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return user, nil
 }
 
 // UpsertUser создает нового пользователя или обновляет существующего
-func (s *UserService) UpsertUser(user *domain.User) error {
+func (s *UserService) UpsertUser(user domain.User) error {
 	existing, err := s.userRepo.GetUser(user.ID)
 	if err != nil {
 		// если не найден, создаем
@@ -60,14 +60,14 @@ func (s *UserService) UpsertUser(user *domain.User) error {
 
 	// если найден — обновляем
 	existing.Name = user.Name
-	existing.TeamID = user.TeamID
+	existing.TeamName = user.TeamName
 	existing.IsActive = user.IsActive
 
 	return s.userRepo.Update(existing)
 }
 
 // GetPRsForReview возвращает список PR, где пользователь назначен ревьювером
-func (s *UserService) GetPRsForReview(userID string) ([]*domain.PullRequest, error) {
+func (s *UserService) GetPRsForReview(userID string) ([]domain.PullRequest, error) {
 	// проверяем существование пользователя
 	_, err := s.userRepo.GetUser(userID)
 	if err != nil {
