@@ -3,9 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
-	// "log"
 	"math/rand"
-	"time"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
 	repo "github.com/slonik1111/pr-reviewer-service/internal/repository"
@@ -34,11 +32,9 @@ func (s *TeamService) CreateTeam(team string, members []domain.User) error {
 	if err == nil {
 		return fmt.Errorf("team %s already exists", team)
 	}
-	// добавляем пользователей и привязываем к команде
 	for _, u := range members {
 		u.TeamName = team
 		if err := s.userRepo.Create(u); err != nil {
-			// если пользователь существует — обновим
 			_ = s.userRepo.Update(u)
 		}
 	}
@@ -67,12 +63,10 @@ func (s *TeamService) ListActiveMembers(teamID string) ([]domain.User, error) {
 // GetRandomActiveMembers возвращает до N случайных активных пользователей
 func (s *TeamService) GetRandomActiveMembers(teamID string, excludeIDs []string, n int) ([]domain.User, error) {
 	users, err := s.ListActiveMembers(teamID)
-	// log.Println("ative users:", users)
 	if err != nil {
 		return nil, err
 	}
 
-	// фильтруем исключения
 	excludeMap := make(map[string]bool)
 	for _, id := range excludeIDs {
 		excludeMap[id] = true
@@ -85,8 +79,6 @@ func (s *TeamService) GetRandomActiveMembers(teamID string, excludeIDs []string,
 		}
 	}
 
-	// перемешиваем
-	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(filtered), func(i, j int) {
 		filtered[i], filtered[j] = filtered[j], filtered[i]
 	})

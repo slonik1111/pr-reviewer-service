@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	// "log"
 	"time"
 
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
@@ -33,13 +32,11 @@ func NewPRService(prRepo repo.PullRequestRepository, userRepo repo.UserRepositor
 
 // CreatePR создает новый Pull Request и назначает до 2 ревьюверов
 func (s *PRService) CreatePR(pr domain.PullRequest) (domain.PullRequest, error) {
-	// проверка существования PR
 	_, err := s.prRepo.Get(pr.ID)
 	if err == nil {
 		return domain.PullRequest{}, fmt.Errorf("PR %s already exists", pr.ID)
 	}
 
-	// проверка существования автора
 	author, err := s.userRepo.GetUser(pr.AuthorID)
 	if err != nil {
 		return domain.PullRequest{}, fmt.Errorf("author %s not found", pr.AuthorID)
@@ -47,7 +44,6 @@ func (s *PRService) CreatePR(pr domain.PullRequest) (domain.PullRequest, error) 
 
 	pr.TeamID = author.TeamName
 
-	// получаем до 2 ревьюверов
 	teamService := NewTeamService(s.userRepo)
 	reviewers, _ := teamService.GetRandomActiveMembers(pr.TeamID, []string{pr.AuthorID}, 2)
 
@@ -61,13 +57,10 @@ func (s *PRService) CreatePR(pr domain.PullRequest) (domain.PullRequest, error) 
 	}
 
 	pr.Status = domain.PRStatusOpen
-	// log.Println("revievers: ", pr.Reviewers)
-	pr.CreatedAt = time.Now().Unix()
 
 	return s.prRepo.Create(pr)
 }
 
-// MergePR помечает PR как MERGED (идемпотентно)
 func (s *PRService) MergePR(prID string) (domain.PullRequest, error) {
 	pr, err := s.prRepo.Get(prID)
 	if err != nil {
@@ -75,13 +68,12 @@ func (s *PRService) MergePR(prID string) (domain.PullRequest, error) {
 	}
 
 	if pr.Status == domain.PRStatusMerged {
-		// идемпотентно
 		return pr, nil
 	}
 
-	now := time.Now().Unix()
 	pr.Status = domain.PRStatusMerged
-	pr.MergedAt = &now
+	merged := time.Now().UTC().Format(time.RFC3339)
+	pr.MergedAt = &merged
 
 	if err := s.prRepo.Update(pr); err != nil {
 		return domain.PullRequest{}, fmt.Errorf("failed to merge PR: %w", err)
@@ -101,12 +93,10 @@ func (s *PRService) ReassignReviewer(prID string, oldReviewerID string) (domain.
 		return domain.PullRequest{}, "", ErrPRMerged
 	}
 
-	// проверяем, что oldReviewer действительно назначен
 	if (len(pr.Reviewers) == 0 || pr.Reviewers[0] != oldReviewerID) && (len(pr.Reviewers) < 2  || pr.Reviewers[1] != oldReviewerID) {
 		return domain.PullRequest{}, "", ErrReviewerNotAssigned
 	}
 
-	// получаем кандидатов для замены
 	oldUser, err := s.userRepo.GetUser(oldReviewerID)
 	if err != nil {
 		return domain.PullRequest{}, "", ErrReviewerNotAssigned
@@ -123,7 +113,6 @@ func (s *PRService) ReassignReviewer(prID string, oldReviewerID string) (domain.
 
 	newReviewerID := candidates[0].ID
 
-	// меняем ревьювера
 	if len(pr.Reviewers) != 0 && pr.Reviewers[0] == oldReviewerID {
 		pr.Reviewers[0] = newReviewerID
 	} else if len(pr.Reviewers) > 1 && pr.Reviewers[1] == oldReviewerID {

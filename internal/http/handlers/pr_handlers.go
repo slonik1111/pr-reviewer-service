@@ -3,8 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"time"
-
 	"github.com/slonik1111/pr-reviewer-service/internal/domain"
 	"github.com/slonik1111/pr-reviewer-service/internal/service"
 )
@@ -69,9 +67,7 @@ func (h *PRHandler) MergePR(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
-	}
-
-	merged := time.Now().UTC().Format(time.RFC3339)
+	}	
 
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"pr": retPR{
@@ -80,7 +76,7 @@ func (h *PRHandler) MergePR(w http.ResponseWriter, r *http.Request) {
 			AuthorID: pr.AuthorID,
 			Status: string(pr.Status),
 			Reviewers: pr.Reviewers,
-			MergedAt: &merged,
+			MergedAt: pr.MergedAt,
 		},
 	})
 }

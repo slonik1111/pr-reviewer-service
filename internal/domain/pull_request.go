@@ -15,6 +15,5 @@ type PullRequest struct {
 	TeamID        string
 	Reviewers     []string
 	Status        PRStatus
-	CreatedAt     int64
-	MergedAt      *int64
+	MergedAt      *string
 }
